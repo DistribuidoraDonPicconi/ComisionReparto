@@ -212,8 +212,8 @@ if ("serviceWorker" in navigator) {
     max-height:calc(100vh - 24px); overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);
   }
   /* Ventana de agregar productos: más arriba y más ancha, para que el teclado no la tape */
-  #pickerModal{align-items:flex-start; padding:calc(10px + env(safe-area-inset-top)) 10px 10px;}
-  #pickerModal .picker-card{max-height:calc(100vh - 20px);}
+  #pickerModal{align-items:flex-start; padding:var(--pk-top, 110px) 10px 10px;}
+  #pickerModal .picker-card{max-height:calc(100vh - var(--pk-top, 110px) - 10px);}
   .picker-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 2px 10px;}
   .picker-title{font-weight:700; font-size:15px;}
   .picker-right{display:flex; align-items:center; gap:8px;}
@@ -226,7 +226,9 @@ if ("serviceWorker" in navigator) {
   .picker-clear:disabled{opacity:.35; cursor:not-allowed;}
   #quickGrid{margin-bottom:10px;}
   .pk-qty{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 8px;}
-  .pk-qty .pk-l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--ink-soft);}
+  .pk-qty .pk-l{flex:1; min-width:0; overflow:hidden; font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--ink-soft); line-height:1.3;}
+  .pk-qty .pk-l span{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .pk-qty .pk-l .pk-un{font-size:10.5px; opacity:.85;}
   .stepper{display:flex; align-items:center; background:var(--surface); border-radius:999px; padding:3px; flex-shrink:0;}
   .stepper button{
     width:52px; height:52px; border-radius:999px; border:none; background:var(--bg);
@@ -749,7 +751,9 @@ if ("serviceWorker" in navigator) {
       const q = hay ? cantEnPedido(seleccionado) : 0;
       inp.value = q ? fmt(q) : '';
     }
-    $('pkL').textContent = hay ? PROD[seleccionado].nombre + ' (' + PROD[seleccionado].unidad + ')' : 'Elegí un producto';
+    $('pkL').innerHTML = hay
+      ? '<span class="pk-nm">' + esc(PROD[seleccionado].nombre) + '</span><span class="pk-un">(' + esc(PROD[seleccionado].unidad) + ')</span>'
+      : '<span class="pk-nm">Elegí un producto</span>';
   }
   function setModo(m){
     modo = m;
@@ -785,6 +789,11 @@ if ("serviceWorker" in navigator) {
   function abrirPicker(){
     historial = []; seleccionado = null; setModo(1);
     renderQuickGrid(); syncCantidad(true);
+    // La ventana arranca justo debajo de las pestañas Cobrar / Comisión
+    try{
+      const nav = document.querySelector('nav.tabs');
+      if(nav) pickerModal.style.setProperty('--pk-top', Math.round(nav.getBoundingClientRect().bottom + 8) + 'px');
+    }catch(_){}
     pickerModal.classList.add('show');
   }
   function cerrarPicker(){ pickerModal.classList.remove('show'); }

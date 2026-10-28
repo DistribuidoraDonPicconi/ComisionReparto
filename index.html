@@ -48,6 +48,8 @@ if ("serviceWorker" in navigator) {
     min-height:100vh;
     padding-bottom:calc(32px + env(safe-area-inset-bottom));
   }
+  /* Franja azul marino detrás de la barra de navegación de Android (igual que la barra de estado de arriba) */
+  body::after{content:""; position:fixed; left:0; right:0; bottom:0; height:env(safe-area-inset-bottom, 0px); background:#071827; z-index:300; pointer-events:none;}
   .app{max-width:480px; margin:0 auto; padding:16px 16px 0;}
   header.top{padding:calc(8px + env(safe-area-inset-top)) 4px 0;}
   header.top h1{font-weight:800; font-size:22px; margin:0; letter-spacing:-0.01em;}

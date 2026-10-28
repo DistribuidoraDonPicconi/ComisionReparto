@@ -1,4 +1,4 @@
-const CACHE = "comision-v4";
+const CACHE = "comision-v5";
 
 const FILES = [
   "./",

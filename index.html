@@ -208,9 +208,12 @@ if ("serviceWorker" in navigator) {
   .confirm-actions .c-yes{background:var(--red); color:#fff;}
 
   .picker-card{
-    background:var(--bg); border-radius:18px; padding:12px; width:100%; max-width:440px;
-    max-height:calc(100vh - 48px); overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);
+    background:var(--bg); border-radius:18px; padding:14px; width:100%; max-width:480px;
+    max-height:calc(100vh - 24px); overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);
   }
+  /* Ventana de agregar productos: más arriba y más ancha, para que el teclado no la tape */
+  #pickerModal{align-items:flex-start; padding:calc(10px + env(safe-area-inset-top)) 10px 10px;}
+  #pickerModal .picker-card{max-height:calc(100vh - 20px);}
   .picker-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 2px 10px;}
   .picker-title{font-weight:700; font-size:15px;}
   .picker-right{display:flex; align-items:center; gap:8px;}
@@ -226,19 +229,19 @@ if ("serviceWorker" in navigator) {
   .pk-qty .pk-l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--ink-soft);}
   .stepper{display:flex; align-items:center; background:var(--surface); border-radius:999px; padding:3px; flex-shrink:0;}
   .stepper button{
-    width:40px; height:40px; border-radius:999px; border:none; background:var(--bg);
-    font-size:21px; font-weight:700; color:var(--accent); cursor:pointer; box-shadow:0 1px 1px rgba(0,0,0,0.06);
+    width:52px; height:52px; border-radius:999px; border:none; background:var(--bg);
+    font-size:26px; font-weight:700; color:var(--accent); cursor:pointer; box-shadow:0 1px 1px rgba(0,0,0,0.06);
   }
   .stepper button:active{transform:scale(0.92);}
   .stepper button.on{color:#fff; background:var(--accent);}
   .stepper #menos.on{background:var(--red);}
-  .stepper input{width:70px; min-width:0; text-align:center; border:none; background:transparent; font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; color:var(--ink);}
+  .stepper input{width:84px; min-width:0; text-align:center; border:none; background:transparent; font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:var(--ink);}
   .stepper input::placeholder{color:var(--ink-soft); opacity:.6;}
   .stepper input:disabled{opacity:.5;}
-  .pk-chips{display:flex; gap:6px; margin-bottom:8px;}
+  .pk-chips{display:flex; gap:8px; margin-bottom:10px;}
   .pk-chips button{
     flex:1; border:1.5px solid var(--accent); background:var(--accent-soft); color:var(--accent-dark);
-    border-radius:10px; height:36px; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; cursor:pointer; transition:transform .08s ease;
+    border-radius:12px; height:52px; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:17px; cursor:pointer; transition:transform .08s ease;
   }
   .pk-chips button:active{transform:scale(0.95);}
   .pk-chips button:disabled{opacity:.4; cursor:not-allowed;}
@@ -274,7 +277,7 @@ if ("serviceWorker" in navigator) {
   <section class="panel" id="panel-comision">
     <div class="card">
       <p class="section-label" style="text-align:center">Comisión Reparto (0,35%)</p>
-      <input class="com-input" type="text" id="importe" placeholder="Ingresar importe" inputmode="numeric" autocomplete="off">
+      <input class="com-input" type="text" id="importe" placeholder="Ingresar importe" inputmode="numeric" enterkeyhint="done" autocomplete="off">
       <div class="com-result" id="resultado">$ 0,00</div>
       <button class="btn copy" id="copiar">Copiar resultado</button>
       <button class="btn danger" id="limpiar">Limpiar</button>
@@ -360,7 +363,7 @@ if ("serviceWorker" in navigator) {
       <span class="pk-l" id="pkL">Elegí un producto</span>
       <div class="stepper">
         <button type="button" id="menos" aria-label="Restar">−</button>
-        <input type="text" id="cantidad" value="" placeholder="0" inputmode="decimal" disabled autocomplete="off">
+        <input type="text" id="cantidad" value="" placeholder="0" inputmode="decimal" enterkeyhint="done" disabled autocomplete="off">
         <button type="button" id="mas" class="on" aria-label="Sumar">+</button>
       </div>
     </div>
@@ -492,6 +495,7 @@ if ("serviceWorker" in navigator) {
     input.value = formateado;
   }
   input.addEventListener('input', calcular);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
   $('limpiar').onclick = () => { input.value = ''; resultado.textContent = '$ 0,00'; input.focus(); };
   $('copiar').onclick = async () => {
     const boton = $('copiar');
@@ -830,6 +834,7 @@ if ("serviceWorker" in navigator) {
     renderQuickGrid(); renderTicket();
   });
   $('cantidad').addEventListener('change', () => syncCantidad(true));
+  $('cantidad').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
   $('pkUndo').addEventListener('click', () => {
     const h = historial.pop();
     if(!h) return;

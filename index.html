@@ -147,9 +147,12 @@ if ("serviceWorker" in navigator) {
     font-weight:700; font-size:15px; cursor:pointer; transition:background .12s ease;
   }
   .add-btn:active{background:var(--accent-dark);}
-  .cols-row{display:flex; gap:10px; margin-top:10px;}
-  .cols-row > div{flex:1; min-width:0;}
-  .col-inp{text-align:center; text-transform:uppercase; font-weight:800;}
+  .cols-row{display:flex; gap:10px; margin-top:10px; align-items:flex-end;}
+  .cols-row > div{flex:0 0 96px; min-width:0;}
+  .cols-row .fld-l{font-size:10px; margin-bottom:4px; white-space:nowrap;}
+  .col-inp{text-align:center; text-transform:uppercase; font-weight:800; height:34px; padding:0 8px; font-size:14px;}
+  .txt-field.ro{color:var(--ink-soft); background:var(--bg); cursor:default; text-overflow:ellipsis;}
+  .txt-field.ro:focus{box-shadow:none;}
   .btn-row{display:flex; gap:8px;}
   .btn-row .add-btn{flex:1; min-width:0;}
   .btn-row .add-btn:first-child{flex:2;}
@@ -269,7 +272,7 @@ if ("serviceWorker" in navigator) {
   <section class="panel" id="panel-comision">
     <div class="card">
       <p class="section-label" style="text-align:center">Comisión Reparto (0,35%)</p>
-      <input class="com-input" type="text" id="importe" placeholder="Ingrese el importe" inputmode="numeric" autocomplete="off">
+      <input class="com-input" type="text" id="importe" placeholder="Ingresar importe" inputmode="numeric" autocomplete="off">
       <div class="com-result" id="resultado">$ 0,00</div>
       <button class="btn copy" id="copiar">Copiar resultado</button>
       <button class="btn danger" id="limpiar">Limpiar</button>
@@ -328,14 +331,13 @@ if ("serviceWorker" in navigator) {
     </div>
     <div class="card" style="margin-bottom:10px">
       <label class="fld-l" for="sheetUrl">Link de Google Sheets</label>
-      <input type="text" class="txt-field" id="sheetUrl" placeholder="Pegá acá el link de la hoja" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <input type="text" class="txt-field ro" id="sheetUrl" readonly tabindex="-1" autocomplete="off" autocapitalize="none" spellcheck="false">
       <div class="cols-row">
-        <div><label class="fld-l" for="colNombre">Columna de nombres</label><input type="text" class="txt-field col-inp" id="colNombre" maxlength="2" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
-        <div><label class="fld-l" for="colPrecio">Columna de precios</label><input type="text" class="txt-field col-inp" id="colPrecio" maxlength="2" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+        <div><label class="fld-l" for="colNombre">Col. nombres</label><input type="text" class="txt-field col-inp ro" id="colNombre" readonly tabindex="-1" maxlength="2" autocomplete="off" spellcheck="false"></div>
+        <div><label class="fld-l" for="colPrecio">Col. precios</label><input type="text" class="txt-field col-inp ro" id="colPrecio" readonly tabindex="-1" maxlength="2" autocomplete="off" spellcheck="false"></div>
       </div>
       <button class="btn primary" id="btnSheet">Guardar y actualizar</button>
       <p class="status" id="sheetStatus"></p>
-      <p class="help" style="margin:10px 2px 0">Indicá en qué columna está el nombre del producto (igual que abajo) y en cuál su precio. Tiene que estar compartida como "Cualquier persona con el enlace" o publicada en la web. Si cambiás un precio en la hoja, la app lo toma sola al abrirla o volver a ella.</p>
     </div>
     <div class="quick-grid" id="preciosBody"></div>
   </div>
@@ -536,11 +538,11 @@ if ("serviceWorker" in navigator) {
   const FILAS_RAPIDAS = [['p1','p2'], ['p3','p4','p5'], ['p6','p7','p8'], ['p9','p10','p11'], ['p12','p13','p14']];
 
   const SHEET_URL_DEFAULT = 'https://docs.google.com/spreadsheets/d/1nXNNIHPWiO875v1MEnhKMAZh7_c3JqUvwB4SNPfCNoI/edit?gid=1377792112#gid=1377792112';
-  let sheetUrl = load(K.url, '') || SHEET_URL_DEFAULT;
+  let sheetUrl = SHEET_URL_DEFAULT;   // fijo (solo lectura)
   let preciosHoja = load(K.precios, {}) || {};   // {idProducto: precio} tomados de la hoja
   let preciosTs = Number(load(K.ts, 0)) || 0;
-  let colNombre = load(K.cn, 'C') || 'C';     // columna con el nombre del producto
-  let colPrecio = load(K.cp, 'F') || 'F';     // columna con el precio
+  let colNombre = 'C';     // columna con el nombre del producto
+  let colPrecio = 'F';     // columna con el precio
   let sheetMsg = null;                           // {tipo:'ok'|'err'|'', texto}
   let actualizando = false, ultimoIntento = 0;
 
@@ -703,16 +705,10 @@ if ("serviceWorker" in navigator) {
   $('colNombre').value = colNombre;
   $('colPrecio').value = colPrecio;
   $('btnSheet').addEventListener('click', () => {
-    sheetUrl = $('sheetUrl').value.trim();
-    colNombre = $('colNombre').value.trim().toUpperCase() || 'C';
-    colPrecio = $('colPrecio').value.trim().toUpperCase() || 'F';
-    $('colNombre').value = colNombre; $('colPrecio').value = colPrecio;
-    save(K.url, sheetUrl); save(K.cn, colNombre); save(K.cp, colPrecio);
     sheetMsg = null;
     if(!sheetUrl){ renderTodoPrecios(); toast('Link borrado'); return; }
     actualizarPrecios(true);
   });
-  $('sheetUrl').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); $('btnSheet').click(); } });
   document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') actualizarPrecios(false); });
   window.addEventListener('online', () => actualizarPrecios(false));
 
@@ -863,6 +859,11 @@ if ("serviceWorker" in navigator) {
     pago = Math.max(0, liveFormat(e.target, {maxInt:9, maxDec:2, neg:false}));
     save(K.pago, pago);
     renderTicket();
+  });
+
+  $('inpPago').setAttribute('enterkeyhint', 'done');
+  $('inpPago').addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); e.target.blur(); }
   });
 
   // ----- Ticket -----

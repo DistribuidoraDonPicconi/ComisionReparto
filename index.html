@@ -155,9 +155,12 @@ if ("serviceWorker" in navigator) {
   .btn-row .add-btn:first-child{flex:2;}
   .add-btn.alt{background:var(--accent-soft); color:var(--accent-dark);}
   .add-btn.alt:active{background:var(--line);}
-  .saldo-row{display:flex; align-items:center; gap:8px; margin-top:8px;}
-  .saldo-row .fld-l{margin:0; flex-shrink:0;}
-  .saldo-row .price-field{flex:1; min-width:0; height:42px;}
+  .saldo-row{display:flex; align-items:flex-start; gap:10px; margin-top:10px;}
+  .saldo-col{flex:1; min-width:0;}
+  .saldo-col .fld-l{margin:0 0 4px 2px;}
+  .saldo-row .price-field{width:100%; height:56px; padding:0 12px;}
+  .saldo-row .price-field span{font-size:18px;}
+  .saldo-row .price-field input{font-size:19px; font-weight:600;}
 
   .ticket{background:var(--surface); border-radius:var(--radius); padding:12px 16px 10px;}
   .ticket .t-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
@@ -258,8 +261,8 @@ if ("serviceWorker" in navigator) {
   <header class="top"><h1>Reparto</h1></header>
 
   <nav class="tabs">
-    <button class="tab" data-tab="comision">Comisión</button>
     <button class="tab" data-tab="cobrar">Cobrar</button>
+    <button class="tab" data-tab="comision">Comisión</button>
   </nav>
 
   <!-- ================= COMISIÓN ================= -->
@@ -281,10 +284,19 @@ if ("serviceWorker" in navigator) {
         <button class="add-btn alt" id="preciosBtn" aria-haspopup="dialog">💲 Precios</button>
       </div>
       <div class="saldo-row">
-        <label class="fld-l" for="inpSaldo">Saldo</label>
-        <div class="price-field">
-          <span>$</span>
-          <input type="text" id="inpSaldo" inputmode="decimal" placeholder="0" autocomplete="off">
+        <div class="saldo-col">
+          <label class="fld-l" for="inpSaldo">Saldo</label>
+          <div class="price-field">
+            <span>$</span>
+            <input type="text" id="inpSaldo" inputmode="decimal" placeholder="0" autocomplete="off">
+          </div>
+        </div>
+        <div class="saldo-col">
+          <label class="fld-l" for="inpPago">Pagó</label>
+          <div class="price-field">
+            <span>$</span>
+            <input type="text" id="inpPago" inputmode="decimal" placeholder="0" autocomplete="off">
+          </div>
         </div>
       </div>
     </div>
@@ -381,7 +393,7 @@ if ("serviceWorker" in navigator) {
   const $ = id => document.getElementById(id);
 
   // ---------- Almacenamiento ----------
-  const K = {tab:'rep_tab', pedido:'rep_pedido', saldo:'rep_saldo', url:'rep_sheet_url', cn:'rep_sheet_col_nombre', cp:'rep_sheet_col_precio', precios:'rep_precios_hoja', ts:'rep_precios_ts'};
+  const K = {tab:'rep_tab', pedido:'rep_pedido', saldo:'rep_saldo', pago:'rep_pago', url:'rep_sheet_url', cn:'rep_sheet_col_nombre', cp:'rep_sheet_col_precio', precios:'rep_precios_hoja', ts:'rep_precios_ts'};
   function load(k, def){
     try{ const v = JSON.parse(localStorage.getItem(k)); return v == null ? def : v; }
     catch(e){ return def; }
@@ -709,6 +721,7 @@ if ("serviceWorker" in navigator) {
   // =====================================================================
   let pedido = (load(K.pedido, []) || []).filter(it => it && PROD[it.id] && it.cantidad > 0);
   let saldo = Number(load(K.saldo, 0)) || 0;
+  let pago = Math.max(0, Number(load(K.pago, 0)) || 0);
   const cantEnPedido = id => { const it = pedido.find(x => x.id === id); return it ? it.cantidad : 0; };
   const calcTotal = () => pedido.reduce((s, it) => s + precioDe(it.id) * it.cantidad, 0);
 
@@ -844,6 +857,14 @@ if ("serviceWorker" in navigator) {
     renderTicket();
   });
 
+  // ----- Pagó (nunca negativo) -----
+  function renderPago(){ $('inpPago').value = pago ? fmt(pago) : ''; }
+  $('inpPago').addEventListener('input', e => {
+    pago = Math.max(0, liveFormat(e.target, {maxInt:9, maxDec:2, neg:false}));
+    save(K.pago, pago);
+    renderTicket();
+  });
+
   // ----- Ticket -----
   function renderTicket(){
     $('ticketDate').textContent = new Date().toLocaleString('es-AR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
@@ -867,6 +888,11 @@ if ("serviceWorker" in navigator) {
       html += `<div class="t-extra-row"><span>Saldo</span><span class="value">${money(saldo)}</span></div>`;
     }
     html += `<div class="t-total-row"><span class="label">Total General</span><span class="value">${money(total + saldo)}</span></div>`;
+    if(pago > 0){
+      const pend = total + saldo - pago;
+      html += `<div class="t-extra-row"><span>Pagó</span><span class="value">- ${money(pago)}</span></div>`;
+      html += `<div class="t-total-row"><span class="label">${pend < 0 ? 'Saldo a favor' : 'Saldo pendiente'}</span><span class="value">${money(Math.abs(pend))}</span></div>`;
+    }
     $('ticketTotales').innerHTML = html;
   }
   $('itemsList').addEventListener('click', e => {
@@ -877,21 +903,17 @@ if ("serviceWorker" in navigator) {
     renderQuickGrid(); renderTicket();
   });
   $('btnNuevo').addEventListener('click', () => {
-    if(!pedido.length && !saldo) return;
-    showConfirm('¿Borrar cantidades y saldo y empezar de nuevo?', () => {
-      pedido = []; saldo = 0;
-      save(K.pedido, pedido); save(K.saldo, saldo);
-      renderSaldo(); renderQuickGrid(); renderTicket();
-      toast('Cobro restablecido');
-    }, 'Borrar');
+    if(!pedido.length && !saldo && !pago) return;
+    pedido = []; saldo = 0; pago = 0;
+    save(K.pedido, pedido); save(K.saldo, saldo); save(K.pago, pago);
+    renderSaldo(); renderPago(); renderQuickGrid(); renderTicket();
+    toast('Cobro restablecido');
   });
 
   // =====================================================================
   //  Pestañas + inicio
   // =====================================================================
-  let tab = load(K.tab, 'comision');
-  if(tab === 'precios') tab = 'cobrar';   // la pestaña Precios ahora vive dentro de Cobrar
-  if(['comision', 'cobrar'].indexOf(tab) < 0) tab = 'comision';
+  let tab = 'cobrar';   // siempre abre en Cobrar
   function setTab(t){
     tab = t;
     save(K.tab, t);
@@ -905,6 +927,7 @@ if ("serviceWorker" in navigator) {
   renderSheetStatus();
   renderPrecios();
   renderSaldo();
+  renderPago();
   renderQuickGrid();
   renderTicket();
   setTab(tab);

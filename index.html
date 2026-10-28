@@ -523,7 +523,8 @@ if ("serviceWorker" in navigator) {
   const POLLO_ENTERO = normTxt('Pollo Entero');
   const FILAS_RAPIDAS = [['p1','p2'], ['p3','p4','p5'], ['p6','p7','p8'], ['p9','p10','p11'], ['p12','p13','p14']];
 
-  let sheetUrl = load(K.url, '') || '';
+  const SHEET_URL_DEFAULT = 'https://docs.google.com/spreadsheets/d/1nXNNIHPWiO875v1MEnhKMAZh7_c3JqUvwB4SNPfCNoI/edit?gid=1377792112#gid=1377792112';
+  let sheetUrl = load(K.url, '') || SHEET_URL_DEFAULT;
   let preciosHoja = load(K.precios, {}) || {};   // {idProducto: precio} tomados de la hoja
   let preciosTs = Number(load(K.ts, 0)) || 0;
   let colNombre = load(K.cn, 'C') || 'C';     // columna con el nombre del producto
